@@ -12,10 +12,10 @@ export function DetailHeader({ title, actionLabel, onAction }: { title: string; 
   const Text = activeAccountId === 'savita' ? PersonalText : CircleText;
   return (
     <View style={styles.row}>
-      <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" style={styles.back}>
-        <Feather name="chevron-left" size={24} color={colors.textPrimary} />
+      <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} accessibilityRole="button" accessibilityLabel="Back" style={styles.back}>
+        <Feather name="chevron-left" size={25} color={colors.blue} />
       </Pressable>
-      <Text variant="headline" numberOfLines={1} style={styles.title}>{title}</Text>
+      <Text variant="headline" style={styles.title}>{title}</Text>
       {actionLabel && onAction ? <Pressable onPress={onAction} accessibilityRole="button" accessibilityLabel={actionLabel} style={styles.action}><Text variant="subhead" color={colors.blue}>{actionLabel}</Text></Pressable> : <View style={styles.end} />}
     </View>
   );

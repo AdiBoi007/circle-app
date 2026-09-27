@@ -1,10 +1,11 @@
+import { launchMarket } from '@/config/launch';
 import type { FamilyMember, MemberId, MemberPulse, Metric, MetricKind } from '@/types';
 
 export const family: FamilyMember[] = [
-  { id: 'arjun', name: 'Arjun Mehra', relation: 'You', age: 23, location: 'Sydney', role: 'Care Captain', status: 'Apple Health synced today', conditions: [], allergies: ['No known allergies'], accent: 'blue' },
-  { id: 'rajiv', name: 'Rajiv Mehra', relation: 'Father', age: 57, location: 'New Delhi', status: 'Evening blood pressure due', conditions: ['Type 2 diabetes', 'Hypertension'], allergies: ['No known allergies'], accent: 'amber' },
-  { id: 'neha', name: 'Neha Mehra', relation: 'Mother', age: 52, location: 'New Delhi', status: 'Morning medication complete', conditions: ['Hypothyroidism', 'Elevated cholesterol'], allergies: ['Penicillin'], accent: 'sage' },
-  { id: 'savita', name: 'Savita Mehra', relation: 'Grandmother', age: 76, location: 'New Delhi', status: 'Mobility exercises due', conditions: ['Osteoarthritis', 'Reduced mobility'], allergies: ['No known allergies'], accent: 'plum' },
+  { id: 'arjun', name: 'Arjun Mehra', relation: 'You', age: 23, location: launchMarket.city, role: 'Care Captain', status: 'Sample health data', conditions: [], allergies: ['No known allergies'], accent: 'blue' },
+  { id: 'rajiv', name: 'Rajiv Mehra', relation: 'Father', age: 57, location: launchMarket.city, status: 'Evening blood pressure due', conditions: ['Type 2 diabetes', 'Hypertension'], allergies: ['No known allergies'], accent: 'amber' },
+  { id: 'neha', name: 'Neha Mehra', relation: 'Mother', age: 52, location: launchMarket.city, status: 'Morning medication complete', conditions: ['Hypothyroidism', 'Elevated cholesterol'], allergies: ['Penicillin'], accent: 'sage' },
+  { id: 'savita', name: 'Savita Mehra', relation: 'Grandmother', age: 76, location: launchMarket.city, status: 'Mobility exercises due', conditions: ['Osteoarthritis', 'Reduced mobility'], allergies: ['No known allergies'], accent: 'plum' },
 ];
 
 export const familyOwner = family[0]!;

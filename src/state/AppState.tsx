@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { goals as seedGoals, medications as seedMedications, notifications as seedNotifications, records as seedRecords, todayItems } from '@/data';
+import { seedIndividualBookings, type IndividualBooking } from '@/data/individual';
+import { usePracticeState } from '@/practitioner/usePracticeState';
+import type { PracticeStore } from '@/practitioner/types';
 import type { AppNotification, Booking, DemoAccountId, FamilyLog, Goal, HealthRecord, Medication, MemberId, PersonalAccountPreferences, TodayItem } from '@/types';
 
 const seedBookings: Booking[] = [
@@ -26,7 +29,15 @@ const seedPersonalPreferences: PersonalAccountPreferences = {
   careNotifications: true,
 };
 
-type State = {
+type State = PracticeStore & {
+  hasStarted: boolean;
+  individualBookings: IndividualBooking[];
+  individualSavedProviders: string[];
+  completedHabitIds: string[];
+  addIndividualBooking: (booking: IndividualBooking) => void;
+  updateIndividualBooking: (id: string, update: Partial<IndividualBooking>) => void;
+  toggleIndividualSavedProvider: (id: string) => void;
+  toggleHabit: (id: string) => void;
   activeAccountId: DemoAccountId;
   personalPreferences: PersonalAccountPreferences;
   tasks: TodayItem[];
@@ -65,7 +76,13 @@ type State = {
 const AppContext = createContext<State | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
+  const [hasStarted, setHasStarted] = useState(false);
+  const [individualBookings, setIndividualBookings] = useState(seedIndividualBookings);
+  const [individualSavedProviders, setIndividualSavedProviders] = useState<string[]>([]);
+  const [completedHabitIds, setCompletedHabitIds] = useState<string[]>([]);
   const [activeAccountId, setActiveAccount] = useState<DemoAccountId>('arjun');
+  const practiceState = usePracticeState(activeAccountId);
+  const { resetPractice } = practiceState;
   const [personalPreferences, setPersonalPreferences] = useState<PersonalAccountPreferences>(seedPersonalPreferences);
   const [tasks, setTasks] = useState(todayItems);
   const [goals, setGoals] = useState(seedGoals);
@@ -78,7 +95,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [aiHistoryKey, setAiHistoryKey] = useState(0);
   const [familyLogs, setFamilyLogs] = useState<FamilyLog[]>([]);
 
-  const setActiveAccountId = useCallback((id: DemoAccountId) => setActiveAccount(id), []);
+  const setActiveAccountId = useCallback((id: DemoAccountId) => { setActiveAccount(id); setHasStarted(true); }, []);
+  const addIndividualBooking = useCallback((booking: IndividualBooking) => setIndividualBookings((items) => [booking, ...items]), []);
+  const updateIndividualBooking = useCallback((id: string, update: Partial<IndividualBooking>) => setIndividualBookings((items) => items.map((item) => item.id === id ? { ...item, ...update } : item)), []);
+  const toggleIndividualSavedProvider = useCallback((id: string) => setIndividualSavedProviders((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]), []);
+  const toggleHabit = useCallback((id: string) => setCompletedHabitIds((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]), []);
   const updatePersonalPreference = useCallback((key: keyof PersonalAccountPreferences, value: boolean) => {
     setPersonalPreferences((current) => ({ ...current, [key]: value }));
   }, []);
@@ -102,13 +123,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const clearAiHistory = useCallback(() => setAiHistoryKey((key) => key + 1), []);
   const addFamilyLog = useCallback((log: FamilyLog) => setFamilyLogs((items) => [log, ...items]), []);
   const resetDemo = useCallback(() => {
+    resetPractice();
+    setHasStarted(false); setIndividualBookings(seedIndividualBookings); setIndividualSavedProviders([]); setCompletedHabitIds([]);
     setTasks(todayItems); setGoals(seedGoals); setRecords(seedRecords); setMedications(seedMedications); setNotifications(seedNotifications);
     setBookings(seedBookings); setSavedProviders(['rhea-malhotra', 'arvind-nair']); setTakenMedicationIds(['neha-levothyroxine']); setFamilyLogs([]); setPersonalPreferences(seedPersonalPreferences); setActiveAccount('arjun'); setAiHistoryKey((key) => key + 1);
-  }, []);
+  }, [resetPractice]);
 
-  const value = useMemo<State>(() => ({ activeAccountId, personalPreferences, tasks, goals, records, medications, notifications, bookings, savedProviders, takenMedicationIds, aiHistoryKey, familyLogs, setActiveAccountId, updatePersonalPreference, toggleTask, rescheduleTask, addTask, updateGoal, replaceGoal, addRecord, deleteRecord, markNotification, addNotification, markAllRead, toggleSavedProvider, addBooking, updateBooking, toggleMedication, addMedication, updateMedication, clearAiHistory, addFamilyLog, resetDemo }), [activeAccountId, personalPreferences, tasks, goals, records, medications, notifications, bookings, savedProviders, takenMedicationIds, aiHistoryKey, familyLogs, setActiveAccountId, updatePersonalPreference, toggleTask, rescheduleTask, addTask, updateGoal, replaceGoal, addRecord, deleteRecord, markNotification, addNotification, markAllRead, toggleSavedProvider, addBooking, updateBooking, toggleMedication, addMedication, updateMedication, clearAiHistory, addFamilyLog, resetDemo]);
+  const value = useMemo(() => ({ activeAccountId, personalPreferences, tasks, goals, records, medications, notifications, bookings, savedProviders, takenMedicationIds, aiHistoryKey, familyLogs, setActiveAccountId, updatePersonalPreference, toggleTask, rescheduleTask, addTask, updateGoal, replaceGoal, addRecord, deleteRecord, markNotification, addNotification, markAllRead, toggleSavedProvider, addBooking, updateBooking, toggleMedication, addMedication, updateMedication, clearAiHistory, addFamilyLog, resetDemo }), [activeAccountId, personalPreferences, tasks, goals, records, medications, notifications, bookings, savedProviders, takenMedicationIds, aiHistoryKey, familyLogs, setActiveAccountId, updatePersonalPreference, toggleTask, rescheduleTask, addTask, updateGoal, replaceGoal, addRecord, deleteRecord, markNotification, addNotification, markAllRead, toggleSavedProvider, addBooking, updateBooking, toggleMedication, addMedication, updateMedication, clearAiHistory, addFamilyLog, resetDemo]);
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={{ ...value, ...practiceState, hasStarted, individualBookings, individualSavedProviders, completedHabitIds, addIndividualBooking, updateIndividualBooking, toggleIndividualSavedProvider, toggleHabit }}>{children}</AppContext.Provider>;
 }
 
 export function useAppState(): State {

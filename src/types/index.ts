@@ -4,7 +4,7 @@ import type { AccentName, PastelName } from '@/theme';
 
 export type FeatherIconName = keyof typeof Feather.glyphMap;
 export type MemberId = 'arjun' | 'rajiv' | 'neha' | 'savita';
-export type DemoAccountId = 'arjun' | 'savita';
+export type DemoAccountId = 'arjun' | 'savita' | 'riya' | 'practitioner';
 
 export interface PersonalAccountPreferences {
   largerText: boolean;

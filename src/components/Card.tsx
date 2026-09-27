@@ -31,7 +31,7 @@ export function Card({
   children,
   padding = spacing.xxl,
   radiusToken = 'card',
-  elevation = 'md',
+  elevation = 'none',
   background = colors.surface,
   bordered = false,
   onPress,
@@ -77,7 +77,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.985 }],
+    opacity: 0.76,
   },
 });

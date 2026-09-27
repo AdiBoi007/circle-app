@@ -31,11 +31,11 @@ const make = (
 export const shadows = {
   none: make(0, 0, 0, 0),
   /** Resting card lift. */
-  sm: make(0.05, 10, 3, 2),
+  sm: make(0.025, 8, 2, 1),
   /** Primary content cards. */
-  md: make(0.07, 20, 8, 5),
+  md: make(0.04, 16, 4, 2),
   /** Sheets, floating surfaces, pressed emphasis. */
-  lg: make(0.12, 32, 16, 12),
+  lg: make(0.09, 24, 8, 6),
 } as const;
 
 export type ShadowToken = keyof typeof shadows;

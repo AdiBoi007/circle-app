@@ -2,8 +2,9 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { AccountSection, Card, CircleMark, IconChip, ListRow, ScreenContainer, ScreenHeader, Text } from '@/components';
+import { AccountSection, Card, CircleMark, DetailHeader, IconChip, ListRow, ScreenContainer, Text } from '@/components';
 import { SavitaSettings } from '@/accounts/savita/SavitaSettings';
+import { IndividualSettings } from '@/experience/IndividualSettings';
 import { useAppState } from '@/state';
 import { accents, colors, spacing } from '@/theme';
 import type { AccentName } from '@/theme';
@@ -30,13 +31,15 @@ const groups: { title: string; items: Item[] }[] = [
 
 export default function SettingsScreen() {
   const { activeAccountId } = useAppState();
-  return activeAccountId === 'savita' ? <SavitaSettings /> : <ArjunSettingsScreen />;
+  return activeAccountId === 'savita' ? <SavitaSettings /> : activeAccountId === 'riya' ? <IndividualSettings /> : <ArjunSettingsScreen />;
 }
 
 function ArjunSettingsScreen() {
+  const { records, medications, goals } = useAppState();
+  const valueFor = (item: Item) => item.id === 'records' ? `${records.length} records` : item.id === 'medications' ? `${medications.filter((medicine) => !medicine.archived).length} active` : item.id === 'goals' ? `${goals.filter((goal) => goal.active).length} active` : item.value;
   return (
-    <ScreenContainer bottomInset={120}>
-      <ScreenHeader title="Settings" titleVariant="title1" style={styles.header} />
+    <ScreenContainer bottomInset={36}>
+      <DetailHeader title="Settings" />
       <View style={styles.account}><AccountSection /></View>
       {groups.map((group) => (
         <View key={group.title} style={styles.group}>
@@ -45,7 +48,7 @@ function ArjunSettingsScreen() {
             {group.items.map((item, index) => (
               <View key={item.id}>
                 {index ? <View style={styles.divider} /> : null}
-                <ListRow title={item.title} value={item.value} onPress={() => router.push((item.href ?? `/settings/${item.id}`) as never)} leading={<IconChip size={40} background={accents[item.accent].tint}><Feather name={item.icon} size={18} color={accents[item.accent].solid} /></IconChip>} style={styles.row} />
+                <ListRow title={item.title} value={valueFor(item)} onPress={() => router.push((item.href ?? `/settings/${item.id}`) as never)} leading={<IconChip size={40} background={accents[item.accent].tint}><Feather name={item.icon} size={18} color={accents[item.accent].solid} /></IconChip>} style={styles.row} />
               </View>
             ))}
           </Card>

@@ -1,0 +1,70 @@
+name: Live API checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-api-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: server
+    env:
+      NODE_ENV: test
+      # Disposable runner-only database credentials, not deployment secrets.
+      TEST_DATABASE_URL: postgresql://circle:circle_ci_only@127.0.0.1:5432/circle_test
+      DATABASE_URL: postgresql://circle:circle_ci_only@127.0.0.1:5432/circle_test
+      API_URL: http://localhost:8787
+      APP_URL: http://localhost:8081
+      MAIL_TRANSPORT: disabled
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: circle
+          POSTGRES_PASSWORD: circle_ci_only
+          POSTGRES_DB: circle_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U circle -d circle_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '>=22.13.0 <23.0.0'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Generate an ephemeral test auth key
+        run: node -e "process.stdout.write('AUTH_SECRET=' + require('node:crypto').randomBytes(32).toString('hex') + '\n')" >> "$GITHUB_ENV"
+
+      - name: Install locked API dependencies
+        run: npm ci
+
+      - name: Check API types
+        run: npm run typecheck
+
+      - name: Apply migrations to the disposable database
+        run: npm run migrate
+
+      - name: Run API tests
+        run: npm test

@@ -44,6 +44,7 @@ export function ScreenContainer({
         <ScrollView
           style={styles.flex}
           contentContainerStyle={[
+            styles.content,
             { paddingHorizontal: padding, paddingBottom: bottomInset },
             contentStyle,
           ]}
@@ -53,13 +54,14 @@ export function ScreenContainer({
           {children}
         </ScrollView>
       ) : (
-        <View style={[styles.flex, { paddingHorizontal: padding }, contentStyle]}>{children}</View>
+        <View style={[styles.flex, styles.content, { paddingHorizontal: padding }, contentStyle]}>{children}</View>
       )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  content: { width: '100%', maxWidth: 760, alignSelf: 'center' },
   safe: {
     flex: 1,
     backgroundColor: colors.background,

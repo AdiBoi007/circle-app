@@ -105,9 +105,12 @@ const styles = StyleSheet.create({
   },
   textBlock: {
     flex: 1,
+    minWidth: 0,
     gap: 1,
   },
   trailing: {
+    flexShrink: 1,
+    maxWidth: '40%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,

@@ -1,3 +1,4 @@
+import { ConsumerPracticeRequests } from '@/practitioner/ConsumerPracticeRequests';
 import { useMemo, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -126,6 +127,7 @@ export default function CalendarScreen() {
     <ScreenContainer edges={['top', 'bottom']}>
       <DetailHeader title="Family calendar" actionLabel="Add" onAction={() => setAdding(true)} />
 
+      <View style={{ marginVertical: 20 }}><ConsumerPracticeRequests /></View>
       <View style={styles.week}>
         {WEEK.map((d) => {
           const active = d.day === selected;

@@ -9,9 +9,9 @@
 export const radius = {
   sm: 12,
   md: 16,
-  input: 18,
-  button: 20,
-  card: 24,
+  input: 14,
+  button: 999,
+  card: 20,
   cardLarge: 28,
   pill: 999,
   full: 9999,

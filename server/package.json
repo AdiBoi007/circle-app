@@ -1,0 +1,32 @@
+{
+  "name": "circle-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "migrate": "tsx src/migrate.ts",
+    "bootstrap": "tsx src/bootstrap.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "NODE_ENV=test tsx --test test/*.test.ts",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@better-auth/expo": "1.7.6",
+    "@hono/node-server": "^2.0.2",
+    "better-auth": "1.7.6",
+    "hono": "^4.12.0",
+    "pg": "8.23.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "@types/pg": "^8.16.0",
+    "tsx": "^4.21.0",
+    "typescript": "~6.0.3"
+  }
+}

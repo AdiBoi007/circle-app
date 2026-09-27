@@ -1,71 +1,44 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Button, Card, DetailHeader, ScreenContainer } from '@/components';
+import { DetailHeader, ScreenContainer } from '@/components';
 import { PersonalText as Text } from '@/accounts/savita/PersonalText';
+import { providerById } from '@/data';
 import { useAppState } from '@/state';
-import { colors, radius, spacing } from '@/theme';
-
-const questions = [
-  'Which exercises are safest for me at home?',
-  'What should I do if my knee hurts more?',
-  'How often should I practise the exercises?',
-];
+import { colors, spacing } from '@/theme';
 
 export default function AppointmentPreparationScreen() {
-  useLocalSearchParams<{ id: string }>();
-  const { medications } = useAppState();
-  const medicines = medications.filter((medicine) => medicine.memberId === 'savita').slice(0, 3);
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { activeAccountId, bookings, medications } = useAppState();
+  const booking = bookings.find((item) => item.id === id && (activeAccountId === 'arjun' || item.memberId === activeAccountId));
+  const provider = booking ? providerById(booking.providerId) : undefined;
+  const medicines = medications.filter((medicine) => medicine.memberId === booking?.memberId && !medicine.archived && !medicine.name.toLowerCase().includes('reminder'));
+  const questions = provider?.category === 'physiotherapy' ? ['Which exercises should I practise at home?', 'What should I do if an exercise hurts?', 'When should we meet again?'] : ['What would you like to know about my health?', 'What should I do before our next visit?', 'When should we meet again?'];
 
-  return (
-    <ScreenContainer edges={['top', 'bottom']} contentStyle={styles.content}>
-      <DetailHeader title="Get ready" />
-      <View style={styles.heading}><Text variant="title1">Your physiotherapy visit</Text><Text variant="body" color={colors.textSecondary} style={styles.body}>A simple list to help you feel prepared.</Text></View>
-      <Card background={colors.blueTint} elevation="none" bordered>
-        <Info icon="clock" title="14 July · 10:00 AM" detail="Home visit" />
-        <View style={styles.divider} />
-        <Info icon="user" title="Vikram Nair" detail="Physiotherapist" />
-      </Card>
+  if (!booking || !provider) return <ScreenContainer contentStyle={styles.content}><DetailHeader title="Get ready" /><Text variant="title2">Appointment unavailable</Text><Text variant="body" style={styles.body}>Open an appointment from your care list to get ready.</Text></ScreenContainer>;
 
-      <Section title="What is bothering you now">
-        <PlainRow text="Knee pain is about 6 out of 10" />
-        <PlainRow text="Walking and bending feel difficult" />
-      </Section>
-
-      <Section title="Medicines to mention">
-        {medicines.map((medicine) => <PlainRow key={medicine.id} text={`${medicine.name} · ${medicine.dose}`} />)}
-      </Section>
-
-      <Section title="Questions you may want to ask">
-        {questions.map((question, index) => <View key={question} style={styles.question}><View style={styles.number}><Text variant="headline" color={colors.plum}>{index + 1}</Text></View><Text variant="body" style={[styles.body, styles.flex]}>{question}</Text></View>)}
-      </Section>
-
-      <Button title="Ask Circle to help me prepare" onPress={() => router.push('/ai?prompt=Help%20me%20prepare%20for%20my%20physiotherapy%20appointment.')} />
-    </ScreenContainer>
-  );
-}
-
-function Info({ icon, title, detail }: { icon: keyof typeof Feather.glyphMap; title: string; detail: string }) {
-  return <View style={styles.info}><View style={styles.infoIcon}><Feather name={icon} size={23} color={colors.blue} /></View><View style={styles.flex}><Text variant="title3">{title}</Text><Text variant="body" color={colors.textSecondary} style={styles.body}>{detail}</Text></View></View>;
-}
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return <View style={styles.section}><Text variant="title2">{title}</Text><Card padding={spacing.md} elevation="none" bordered>{children}</Card></View>;
-}
-function PlainRow({ text }: { text: string }) {
-  return <View style={styles.plainRow}><Feather name="check-circle" size={22} color={colors.sage} /><Text variant="body" style={[styles.body, styles.flex]}>{text}</Text></View>;
+  return <ScreenContainer edges={['top', 'bottom']} contentStyle={styles.content}>
+    <DetailHeader title="Get ready" />
+    <View style={styles.heading}><Text variant="title1">Before your visit</Text><Text variant="body" color={colors.textSecondary} style={styles.body}>{booking.service} with {provider.name}</Text></View>
+    <View style={styles.appointment}><Text variant="title3">{booking.date} · {booking.time}</Text><Text variant="body" style={styles.body}>IST (UTC+05:30) · {booking.mode === 'In person' ? 'Clinic visit' : booking.mode}</Text>{booking.status !== 'Confirmed' ? <Text variant="headline">This appointment is {booking.status.toLowerCase()}.</Text> : null}</View>
+    <View style={styles.section}><Text variant="title2">Your medicines</Text><View style={styles.card}>{medicines.length ? medicines.map((medicine) => <View key={medicine.id} style={styles.medicine}><Text variant="headline">{medicine.name}</Text><Text variant="body" style={styles.body} color={colors.textSecondary}>{medicine.dose} · {medicine.schedule}</Text></View>) : <Text variant="body" style={styles.body}>Your saved list has no active medicines. Bring any current prescription or medicine packaging.</Text>}<Text variant="body" color={colors.textSecondary} style={styles.body}>Mention any changes to this list.</Text></View></View>
+    <View style={styles.section}><Text variant="title2">How you feel</Text><View style={styles.card}><Text variant="body" style={styles.body}>What has changed since your last visit? Make a note to discuss when you meet.</Text></View></View>
+    <View style={styles.section}><Text variant="title2">Questions to ask</Text><View style={styles.card}>{questions.map((question) => <View key={question} style={styles.question}><Feather name="message-circle" size={24} color={colors.blue} /><Text variant="body" style={[styles.body, styles.flex]}>{question}</Text></View>)}</View></View>
+    <Pressable onPress={() => router.replace(`/booking/${booking.id}`)} accessibilityRole="button" style={({ pressed }) => [styles.done, pressed && styles.pressed]}><Text variant="headline" color={colors.white}>Back to my appointment</Text></Pressable>
+  </ScreenContainer>;
 }
 
 const styles = StyleSheet.create({
   content: { gap: spacing.xl },
-  heading: { gap: spacing.sm },
-  body: { fontSize: 18, lineHeight: 26 },
-  info: { minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  infoIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
+  heading: { gap: spacing.md },
+  body: { fontSize: 19, lineHeight: 27 },
+  appointment: { padding: spacing.lg, borderRadius: 18, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, gap: spacing.sm },
+  card: { padding: spacing.lg, borderRadius: 18, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, gap: spacing.lg },
   flex: { flex: 1, minWidth: 0 },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.borderStrong, marginVertical: spacing.md },
   section: { gap: spacing.md },
-  plainRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.sm },
-  question: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderStrong },
-  number: { width: 42, height: 42, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.plumTint },
+  medicine: { gap: spacing.xs, paddingBottom: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  question: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  done: { minHeight: 60, padding: spacing.lg, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.blue },
+  pressed: { opacity: 0.7 },
 });

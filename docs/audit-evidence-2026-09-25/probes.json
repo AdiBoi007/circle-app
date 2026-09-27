@@ -1,0 +1,191 @@
+{
+  "inventory": {
+    "family": 4,
+    "records": 26,
+    "medicationEntries": 12,
+    "providers": 36,
+    "tasks": 16,
+    "goals": 5,
+    "bookings": 10,
+    "notifications": 16
+  },
+  "probes": [
+    {
+      "name": "Natural-language classification",
+      "evidence": {
+        "input": "Dad did not take his medication",
+        "category": "Medication",
+        "memberId": "rajiv"
+      }
+    },
+    {
+      "name": "Natural-language classification",
+      "evidence": {
+        "input": "Dad took his telmisartan medication",
+        "category": "Medication",
+        "memberId": "rajiv"
+      }
+    },
+    {
+      "name": "Natural-language classification",
+      "evidence": {
+        "input": "Mum felt dizzy after taking her medication",
+        "category": "Medication",
+        "memberId": "neha"
+      }
+    },
+    {
+      "name": "Natural-language classification",
+      "evidence": {
+        "input": "Grandma completed no exercises",
+        "category": "Task completion",
+        "memberId": "savita"
+      }
+    },
+    {
+      "name": "Actual confirmation handler with negated medication input",
+      "evidence": [
+        {
+          "familyLog": {
+            "id": "family-log-probe",
+            "memberId": "rajiv",
+            "category": "Medication",
+            "text": "Dad did not take his medication",
+            "time": "Just now"
+          }
+        },
+        {
+          "toggleMedication": "rajiv-metformin"
+        }
+      ]
+    },
+    {
+      "name": "Up Next ordering",
+      "evidence": {
+        "input": [
+          "far-future",
+          "physio-savita",
+          "yoga-neha",
+          "diet-rajiv",
+          "trainer-arjun",
+          "sleep-arjun",
+          "nurse-rajiv"
+        ],
+        "selected": "far-future"
+      }
+    },
+    {
+      "name": "Conflicting relative dates",
+      "evidence": {
+        "homeJuly14": "Tomorrow",
+        "calendarTomorrow": 13,
+        "calendarJuly14": 14
+      }
+    },
+    {
+      "name": "Latest vaccination report explanation",
+      "evidence": {
+        "text": "Your report is about your knee and movement. It records knee pain and recommends continuing the mobility plan. It does not change your treatment. Ask your physiotherapist if an exercise feels uncomfortable.",
+        "citations": [
+          {
+            "title": "Influenza Vaccination",
+            "recordId": "savita-flu-2025"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Add a report",
+            "href": "/savita-upload"
+          },
+          {
+            "label": "Share with Arjun",
+            "href": "share-arjun"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Foreign record supplied to Savita assistant",
+      "evidence": {
+        "text": "Your report is about your knee and movement. It records knee pain and recommends continuing the mobility plan. It does not change your treatment. Ask your physiotherapist if an exercise feels uncomfortable.",
+        "citations": [
+          {
+            "title": "Comprehensive Diabetes Panel",
+            "recordId": "rajiv-diabetes-jul"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Add a report",
+            "href": "/savita-upload"
+          },
+          {
+            "label": "Share with Arjun",
+            "href": "share-arjun"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Language search placeholder versus actual predicate",
+      "evidence": {
+        "query": "Hindi",
+        "matches": 0,
+        "hindiSpeaking": 29
+      }
+    },
+    {
+      "name": "Mixed-currency price sort",
+      "evidence": [
+        {
+          "name": "Kabir Sethi",
+          "currency": "A$",
+          "price": 55
+        },
+        {
+          "name": "Liam Walker",
+          "currency": "A$",
+          "price": 65
+        },
+        {
+          "name": "Sophie Hart",
+          "currency": "A$",
+          "price": 70
+        },
+        {
+          "name": "Olivia Reed",
+          "currency": "A$",
+          "price": 95
+        }
+      ]
+    },
+    {
+      "name": "Record date grouping",
+      "evidence": {
+        "date": "25 September 2026",
+        "group": "Earlier"
+      }
+    },
+    {
+      "name": "Unknown metric member fallback",
+      "evidence": {
+        "requested": "missing-member",
+        "resolved": "arjun",
+        "memberExists": false
+      }
+    },
+    {
+      "name": "Static Today response after simulated completion",
+      "evidence": {
+        "tasksCompleted": true,
+        "response": "Today’s focus is gentle and practical: Savita’s mobility exercises, Rajiv’s 7:30 pm blood pressure log, and Arjun preparing Rajiv’s glucose diary. Neha completed her morning medication.",
+        "homeSummary": "Rajiv has an evening blood-pressure reading due at 7:30 pm. Savita’s mobility exercises are overdue. Neha and Arjun are up to date."
+      }
+    }
+  ],
+  "contrastSamples": {
+    "secondaryOnBackground": 5.33,
+    "tertiaryOnSurface": 5.39,
+    "whiteOnBlue": 5.51
+  }
+}

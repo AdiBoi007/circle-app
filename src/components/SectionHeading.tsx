@@ -31,7 +31,7 @@ export function SectionHeading({ title, eyebrow, action, style }: Props) {
           onPress={action.onPress}
           accessibilityRole="button"
           hitSlop={8}
-          style={({ pressed }) => pressed && styles.pressed}
+          style={({ pressed }) => [styles.action, pressed && styles.pressed]}
         >
           <Text variant="subhead" color={colors.blue}>
             {action.label}
@@ -53,6 +53,7 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
     flexShrink: 1,
   },
+  action: { minHeight: 44, justifyContent: 'center' },
   pressed: {
     opacity: 0.6,
   },

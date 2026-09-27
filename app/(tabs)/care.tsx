@@ -1,486 +1,172 @@
-import { useMemo, useState } from "react";
-import { Feather as FeatherBase } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { launchMarket } from '@/config/launch';
+import { availableCareModes as eligibleModes } from '@/utils/careEligibility';
+import { useMemo, useState, type ReactNode } from 'react';
+import { Feather } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import {
-  Avatar,
-  Button,
-  Card,
-  ScreenContainer,
-  ScreenHeader,
-  SectionHeading,
-  Sheet,
-  StatusPill,
-  Text,
-} from "@/components";
-import {
-  careCategories,
-  careProfessionals,
-  family,
-  providerById,
-} from "@/data";
-import { useAppState } from "@/state";
-import { colors, radius, shadows, spacing } from "@/theme";
-import type { CareProfessional, MemberId } from "@/types";
+import { ConsumerPracticeRequests } from '@/practitioner/ConsumerPracticeRequests';
+import { practiceDirectoryEntry } from '@/practitioner/directory';
+import { IndividualCare } from '@/accounts/individual/IndividualCare';
 import { SavitaCare } from '@/accounts/savita/SavitaCare';
+import { Avatar, Button, ScreenContainer, Sheet, Text } from '@/components';
+import { careCategories, careProfessionals, family } from '@/data';
+import { ExperienceHeader } from '@/experience/ExperienceHeader';
+import { useAppState } from '@/state';
+import { colors } from '@/theme';
+import type { CareMode, CareProfessional, FeatherIconName, MemberId } from '@/types';
 
-function Feather({
-  name,
-  size,
-  color,
-}: {
-  name: string;
-  size?: number;
-  color?: string;
-}) {
-  const resolved = (
-    name === "sparkles" ? "star" : name
-  ) as keyof typeof FeatherBase.glyphMap;
-  return <FeatherBase name={resolved} size={size} color={color} />;
-}
+const sage = colors.blue;
+const modes = ['Any format', 'Online', 'In person', 'Home visit'] as const;
 
 export default function CareScreen() {
   const { activeAccountId } = useAppState();
-  return activeAccountId === 'savita' ? <SavitaCare /> : <ArjunCareScreen />;
+  if (activeAccountId === 'riya') return <IndividualCare />;
+  if (activeAccountId === 'savita') return <SavitaCare />;
+  return <FamilyCare />;
 }
 
-function ArjunCareScreen() {
-  const params = useLocalSearchParams<{ match?: string }>();
-  const { bookings, savedProviders } = useAppState();
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("all");
-  const [filters, setFilters] = useState(false);
-  const [matching, setMatching] = useState(params.match === "true");
-  const [matchText, setMatchText] = useState("");
-  const [member, setMember] = useState<MemberId | "all">("all");
-  const [language, setLanguage] = useState("Any");
-  const [mode, setMode] = useState("Any");
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [sort, setSort] = useState<"Match" | "Rating" | "Price">("Match");
-  const visible = useMemo(
-    () =>
-      careProfessionals
-        .filter(
-          (pro) =>
-            (category === "all" || pro.category === category) &&
-            (member === "all" || pro.recommendedFor.includes(member)) &&
-            (language === "Any" || pro.languages.includes(language)) &&
-            (mode === "Any" || pro.modes.includes(mode as never)) &&
-            (!verifiedOnly || pro.verified) &&
-            `${pro.name} ${pro.title} ${pro.specialisations.join(" ")}`
-              .toLowerCase()
-              .includes(query.toLowerCase()),
-        )
-        .sort((a, b) =>
-          sort === "Rating"
-            ? b.rating - a.rating
-            : sort === "Price"
-              ? a.price - b.price
-              : b.matchScore - a.matchScore,
-        ),
-    [category, member, language, mode, verifiedOnly, query, sort],
-  );
-  const results = matchText
-    ? careProfessionals
-        .filter(
-          (pro) =>
-            pro.category === "nutrition" &&
-            pro.languages.includes("Hindi") &&
-            pro.price <= 1200,
-        )
-        .sort((a, b) =>
-          a.id === "rhea-malhotra" ? -1 : b.matchScore - a.matchScore,
-        )
-    : [];
+function FamilyCare() {
+  const params = useLocalSearchParams<{ memberId?: MemberId; category?: string }>();
+  const { bookings, savedProviders, toggleSavedProvider, practice } = useAppState();
+  const [memberId, setMemberId] = useState<MemberId>(family.some((person) => person.id === params.memberId) ? params.memberId! : 'rajiv');
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState(careCategories.some((item) => item.id === params.category) ? params.category! : 'all');
+  const [mode, setMode] = useState<typeof modes[number]>('Any format');
+  const [language, setLanguage] = useState('Any language');
+  const [sort, setSort] = useState('Name');
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [moreFilters, setMoreFilters] = useState(false);
+  const member = family.find((person) => person.id === memberId)!;
+  const selectedLocation = launchMarket.city;
+  const confirmedBookings = bookings.filter((booking) => booking.status === 'Confirmed');
+
+  const visible = useMemo(() => careProfessionals.map((pro) => pro.id === 'arvind-nair' ? practiceDirectoryEntry(practice) : pro).filter((pro) => {
+    const availableModes = eligibleModes(pro, memberId);
+    return availableModes.length > 0 &&
+      (category === 'all' || pro.category === category) &&
+      (mode === 'Any format' || availableModes.includes(mode)) &&
+      (language === 'Any language' || pro.languages.includes(language)) &&
+      (!savedOnly || savedProviders.includes(pro.id)) &&
+      `${pro.name} ${pro.title} ${pro.specialisations.join(' ')} ${pro.languages.join(' ')} ${pro.location}`.toLowerCase().includes(query.trim().toLowerCase());
+  }).sort((a, b) => sort === 'Price: low to high' ? a.price - b.price : a.name.localeCompare(b.name)), [memberId, category, mode, language, savedOnly, savedProviders, query, sort, practice]);
+
+  function resetFilters() {
+    setQuery(''); setCategory('all'); setMode('Any format'); setLanguage('Any language'); setSort('Name'); setSavedOnly(false);
+  }
+
   return (
-    <ScreenContainer bottomInset={120}>
-      <ScreenHeader
-        title="Find the right care"
-        titleVariant="title1"
-        subtitle="Vetted, non-doctor professionals for your whole family."
-        style={styles.header}
-      />
-      <Button
-        title="Match with Circle AI"
-        variant="secondary"
-        icon={<Feather name="sparkles" size={18} color={colors.blue} />}
-        onPress={() => setMatching(true)}
-        style={styles.matchButton}
-      />
+    <ScreenContainer bottomInset={36} contentStyle={styles.page}>
+      <ExperienceHeader eyebrow="SUPPORT FOR YOUR PEOPLE" title="Find care" subtitle="The right support for your family." />
+
+      <Pressable accessibilityRole="button" accessibilityLabel="Open all family appointments" onPress={() => router.push('/calendar')} style={({ pressed }) => [styles.appointments, pressed && styles.pressed]}>
+        <View style={styles.appointmentIcon}><Feather name="calendar" size={22} color={sage} /></View>
+        <View style={styles.flex}><Text variant="headline">Family appointments</Text><Text variant="footnote" color={colors.textSecondary}>{confirmedBookings.length} booked in your demo calendar</Text></View>
+        <Feather name="arrow-up-right" size={22} color={sage} />
+      </Pressable>
+
+      <ConsumerPracticeRequests limit={2} activeOnly />
+
       <View style={styles.search}>
-        <Feather name="search" size={18} color={colors.textSecondary} />
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search care, language or specialty"
-          placeholderTextColor={colors.textTertiary}
-          style={styles.searchInput}
-        />
-        <Pressable onPress={() => setFilters(true)}>
-          <Feather name="sliders" size={19} color={colors.blue} />
-        </Pressable>
+        <Feather name="search" size={21} color={colors.textSecondary} />
+        <TextInput value={query} onChangeText={setQuery} accessibilityLabel="Search professionals by name, specialty, language or location" placeholder="Try dietitian, mobility, therapist…" placeholderTextColor={colors.textSecondary} returnKeyType="search" style={styles.searchInput} />
+        {query ? <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery('')} style={styles.clear}><Feather name="x" size={20} color={colors.textSecondary} /></Pressable> : null}
       </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categories}
-        style={styles.categoriesWrap}
-      >
-        {careCategories.map((cat) => (
-          <Pressable
-            key={cat.id}
-            onPress={() => setCategory(cat.id)}
-            accessibilityRole="button"
-            accessibilityLabel={`${cat.label} care category`}
-            accessibilityState={{ selected: category === cat.id }}
-            style={[styles.chip, category === cat.id && styles.chipActive]}
-          >
-            <Feather
-              name={cat.icon}
-              size={15}
-              color={category === cat.id ? colors.white : colors.textSecondary}
-            />
-            <Text
-              variant="subhead"
-              color={category === cat.id ? colors.white : colors.textPrimary}
-            >
-              {cat.label}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-      {bookings.filter((item) => item.status === "Confirmed").length ? (
-        <View style={styles.section}>
-          <SectionHeading title="Upcoming bookings" />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontal}
-          >
-            {bookings
-              .filter((item) => item.status === "Confirmed")
-              .map((booking) => {
-                const pro = providerById(booking.providerId);
-                return (
-                  <Card
-                    key={booking.id}
-                    style={styles.booking}
-                    onPress={() => router.push(`/booking/${booking.id}`)}
-                  >
-                    <View style={styles.bookingPerson}>
-                      {pro ? <Avatar name={pro.name} accent={pro.accent} size={42} /> : null}
-                      <View style={styles.proTitle}>
-                        <Text variant="headline">{pro?.name}</Text>
-                        <Text variant="footnote" color={colors.textSecondary}>
-                          {booking.memberId} · {booking.date}
-                        </Text>
-                      </View>
-                    </View>
-                    <StatusPill label={booking.time} accent="blue" />
-                  </Card>
-                );
-              })}
-          </ScrollView>
-        </View>
-      ) : null}
-      <View style={styles.section}>
-        <SectionHeading
-          title={
-            category === "all"
-              ? "Recommended for your family"
-              : (careCategories.find((item) => item.id === category)?.label ??
-                "Care")
-          }
-          action={{
-            label: `${visible.length} matches`,
-            onPress: () => setFilters(true),
-          }}
-        />
-        <View style={styles.list}>
-          {visible.slice(0, category === "all" ? 8 : 36).map((pro) => (
-            <ProfessionalCard
-              key={pro.id}
-              pro={pro}
-              saved={savedProviders.includes(pro.id)}
-            />
-          ))}
+
+      <View style={styles.filterGroup}>
+        <FilterRow title="Care for" detail={launchMarket.regionLabel}>
+          {family.map((person) => <FilterChip key={person.id} title={person.name.split(' ')[0]!} selected={memberId === person.id} onPress={() => setMemberId(person.id)} />)}
+        </FilterRow>
+        <FilterRow title="Specialty">
+          {careCategories.map((item) => <FilterChip key={item.id} title={item.label} icon={item.icon} selected={category === item.id} onPress={() => setCategory(item.id)} />)}
+        </FilterRow>
+        <FilterRow title="Consultation">
+          {modes.map((item) => <FilterChip key={item} title={item} selected={mode === item} onPress={() => setMode(item)} />)}
+        </FilterRow>
+        <View style={styles.utilityRow}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Choose language and price sorting" onPress={() => setMoreFilters(true)} style={styles.utilityAction}><Feather name="sliders" size={17} color={sage} /><Text variant="subhead" color={sage}>{language === 'Any language' ? 'Language & sort' : language}</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: savedOnly }} accessibilityLabel={savedOnly ? 'Show all professionals' : 'Show saved professionals only'} onPress={() => setSavedOnly(!savedOnly)} style={styles.utilityAction}><Feather name="bookmark" size={17} color={sage} /><Text variant="subhead" color={sage}>{savedOnly ? 'Saved only ✓' : 'Saved'}</Text></Pressable>
         </View>
       </View>
-      {savedProviders.length ? (
-        <View style={styles.section}>
-          <SectionHeading title="Saved professionals" />
-          <View style={styles.list}>
-            {savedProviders
-              .map(providerById)
-              .filter(Boolean)
-              .map((pro) => (
-                <ProfessionalCard key={pro!.id} pro={pro!} saved />
-              ))}
-          </View>
-        </View>
-      ) : null}
-      <View style={styles.section}>
-        <SectionHeading title="Online care" />
-        <Text variant="callout" color={colors.textSecondary}>
-          Flexible sessions across time zones, with records shared only when you
-          choose.
-        </Text>
-        <SectionHeading title="Home care" />
-        <Text variant="callout" color={colors.textSecondary}>
-          Verified physiotherapy, nursing, caregiving and elder-care support in
-          Delhi NCR.
-        </Text>
+
+      <View style={styles.demoNotice}><Feather name="info" size={17} color={colors.textSecondary} /><Text variant="footnote" color={colors.textSecondary} style={styles.flex}>Sample directory. Profiles, prices and bookings are for this preview.</Text></View>
+
+      <View style={styles.results}>
+        <View style={styles.resultsHeading}><View style={styles.flex}><Text variant="title3">{savedOnly ? 'Your shortlist' : `Explore care for ${member.name.split(' ')[0]}`}</Text><Text variant="footnote" color={colors.textSecondary}>{selectedLocation} · {sort === 'Name' ? 'Alphabetical' : 'Price: low to high'}</Text></View><Text variant="footnote" color={colors.textSecondary}>{visible.length} profiles</Text></View>
+        {visible.length ? visible.map((pro) => <ProfessionalCard key={pro.id} pro={pro} memberId={memberId} modes={eligibleModes(pro, memberId)} saved={savedProviders.includes(pro.id)} onSave={() => toggleSavedProvider(pro.id)} />) : <View style={styles.empty}><View style={styles.emptyIcon}><Feather name="search" size={26} color={sage} /></View><Text variant="title3">A little more room to search?</Text><Text variant="callout" color={colors.textSecondary} align="center">There are no sample profiles with these filters for {member.name.split(' ')[0]}. Try another specialty or format.</Text><Button title="Clear search filters" variant="secondary" onPress={resetFilters} /></View>}
       </View>
-      <Sheet
-        visible={filters}
-        onClose={() => setFilters(false)}
-        title="Search & filters"
-        footer={
-          <View style={styles.sheetGap}>
-            <Button title="Show results" onPress={() => setFilters(false)} />
-            <Button
-              title="Clear filters"
-              variant="secondary"
-              onPress={() => {
-                setMember("all");
-                setLanguage("Any");
-                setMode("Any");
-                setVerifiedOnly(false);
-                setSort("Match");
-              }}
-            />
-          </View>
-        }
-      >
-        <View style={styles.sheetGap}>
-          <Text variant="caption" color={colors.textSecondary}>
-            MEMBER
-          </Text>
-          <ChoiceRow
-            options={["all", ...family.map((item) => item.id)]}
-            value={member}
-            onChange={(value) => setMember(value as MemberId | "all")}
-          />
-          <Text variant="caption" color={colors.textSecondary}>
-            LANGUAGE
-          </Text>
-          <ChoiceRow
-            options={["Any", "Hindi", "English"]}
-            value={language}
-            onChange={setLanguage}
-          />
-          <Text variant="caption" color={colors.textSecondary}>
-            MODE
-          </Text>
-          <ChoiceRow
-            options={["Any", "Online", "Home visit"]}
-            value={mode}
-            onChange={setMode}
-          />
-          <Text variant="caption" color={colors.textSecondary}>
-            SORT
-          </Text>
-          <ChoiceRow
-            options={["Match", "Rating", "Price"]}
-            value={sort}
-            onChange={(value) => setSort(value as typeof sort)}
-          />
-          <Button
-            title={verifiedOnly ? "Verified only ✓" : "Verified only"}
-            variant="secondary"
-            onPress={() => setVerifiedOnly((value) => !value)}
-          />
-        </View>
-      </Sheet>
-      <Sheet
-        visible={matching}
-        onClose={() => setMatching(false)}
-        title="AI care matching"
-      >
-        <View style={styles.sheetGap}>
-          <Text variant="callout" color={colors.textSecondary}>
-            Describe needs, preferences, budget and availability—or use the
-            guided example.
-          </Text>
-          <TextInput
-            value={matchText}
-            onChangeText={setMatchText}
-            multiline
-            placeholder="My father has diabetes, prefers vegetarian Indian meals, speaks Hindi, needs evening online sessions and has a ₹1,200 budget."
-            placeholderTextColor={colors.textTertiary}
-            style={styles.matchInput}
-          />
-          <Button
-            title="Find matches"
-            onPress={() =>
-              setMatchText(
-                (value) =>
-                  value ||
-                  "My father has diabetes, prefers vegetarian Indian meals, speaks Hindi, needs evening online sessions and has a ₹1,200 budget.",
-              )
-            }
-          />
-          {results.map((pro, index) => (
-            <Card
-              key={pro.id}
-              onPress={() => {
-                setMatching(false);
-                router.push(`/provider/${pro.id}`);
-              }}
-            >
-              <View style={styles.proTop}>
-                <Avatar name={pro.name} accent={pro.accent} size={48} />
-                <View style={styles.proTitle}>
-                  <Text variant="caption" color={colors.blue}>#{index + 1} · {pro.matchScore}% MATCH</Text>
-                  <Text variant="headline">{pro.name}</Text>
-                  <Text variant="footnote" color={colors.textSecondary}>{pro.why}</Text>
-                </View>
-              </View>
-            </Card>
-          ))}
-        </View>
+
+      <Sheet visible={moreFilters} onClose={() => setMoreFilters(false)} title="Make it work for you" footer={<Button title={`Show ${visible.length} profiles`} onPress={() => setMoreFilters(false)} />}>
+        <View style={styles.filterGroup}><FilterRow title="Language">{['Any language', 'English', 'Hindi', 'Punjabi'].map((item) => <FilterChip key={item} title={item} selected={language === item} onPress={() => setLanguage(item)} />)}</FilterRow><FilterRow title="Sort profiles">{['Name', 'Price: low to high'].map((item) => <FilterChip key={item} title={item} selected={sort === item} onPress={() => setSort(item)} />)}</FilterRow><Text variant="footnote" color={colors.textSecondary}>Prices are shown in Indian rupees (₹) for {member.name.split(' ')[0]}.</Text><Button title="Reset filters" variant="tertiary" onPress={resetFilters} /></View>
       </Sheet>
     </ScreenContainer>
   );
 }
 
-function ProfessionalCard({
-  pro,
-  saved,
-}: {
-  pro: CareProfessional;
-  saved: boolean;
-}) {
+function ProfessionalCard({ pro, memberId, modes: availableModes, saved, onSave }: { pro: CareProfessional; memberId: MemberId; modes: CareMode[]; saved: boolean; onSave: () => void }) {
+  const openProfile = () => {
+    if (!eligibleModes(pro, memberId).length) return;
+    router.push({ pathname: '/provider/[id]', params: { id: pro.id, memberId } });
+  };
   return (
-    <Card onPress={() => router.push(`/provider/${pro.id}`)}>
-      <View style={styles.proTop}>
-        <Avatar name={pro.name} accent={pro.accent} size={52} />
-        <View style={styles.proTitle}>
-          <Text variant="headline">{pro.name}</Text>
-          <Text variant="subhead" color={colors.textSecondary}>
-            {pro.title}
-          </Text>
-        </View>
-        <Feather
-          name={saved ? "bookmark" : "chevron-right"}
-          size={20}
-          color={saved ? colors.blue : colors.textTertiary}
-        />
-      </View>
-      <Text variant="callout" color={colors.textSecondary} style={styles.blurb}>
-        {pro.why}
-      </Text>
-      <View style={styles.proMeta}>
-        <StatusPill label={`${pro.matchScore}% match`} accent={pro.accent} />
-        <Text variant="footnote" color={colors.textSecondary}>
-          ★ {pro.rating} ({pro.reviewCount}) · {pro.currency}
-          {pro.price}
-          {pro.priceSuffix}
-        </Text>
-      </View>
-    </Card>
-  );
-}
-function ChoiceRow({
-  options,
-  value,
-  onChange,
-}: {
-  options: string[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.choiceRow}
-    >
-      {options.map((item) => (
-        <Pressable
-          key={item}
-          onPress={() => onChange(item)}
-          style={[styles.choice, value === item && styles.choiceActive]}
-        >
-          <Text
-            variant="caption"
-            color={value === item ? colors.white : colors.textSecondary}
-          >
-            {item}
-          </Text>
+    <View style={styles.provider}>
+      <View style={styles.providerTop}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`View ${pro.name}, ${pro.title}`} onPress={openProfile} style={({ pressed }) => [styles.providerIdentity, pressed && styles.pressed]}>
+          <Avatar name={pro.name} accent={pro.accent} size={56} />
+          <View style={styles.flex}><Text variant="headline">{pro.name}</Text><Text variant="subhead" color={colors.textSecondary}>{pro.title}</Text></View>
         </Pressable>
-      ))}
-    </ScrollView>
+        <Pressable accessibilityRole="button" accessibilityLabel={`${saved ? 'Unsave' : 'Save'} ${pro.name}`} accessibilityState={{ selected: saved }} onPress={onSave} style={[styles.saveButton, saved && styles.savedButton]}><Feather name={saved ? 'check' : 'bookmark'} size={20} color={sage} /></Pressable>
+      </View>
+      <Text variant="callout" color={colors.textSecondary}>{pro.specialisations[0]}</Text>
+      <View style={styles.providerDetails}><View style={styles.detail}><Feather name="map-pin" size={14} color={colors.textSecondary} /><Text variant="footnote" color={colors.textSecondary}>{pro.location.replace(' · Online', '')}</Text></View><View style={styles.detail}><Feather name="message-circle" size={14} color={colors.textSecondary} /><Text variant="footnote" color={colors.textSecondary}>{pro.languages.join(', ')}</Text></View></View>
+      <View style={styles.modeTags}>{availableModes.map((item) => <View key={item} style={styles.modeTag}><Feather name={item === 'Online' ? 'video' : item === 'Home visit' ? 'home' : 'users'} size={13} color={sage} /><Text variant="caption" color={sage}>{item}</Text></View>)}</View>
+      <View style={styles.providerFooter}><View style={styles.flex}><Text variant="title3">{pro.currency}{pro.price}<Text variant="footnote" color={colors.textSecondary}>{pro.priceSuffix ?? ' / session'}</Text></Text><Text variant="caption" color={colors.textSecondary}>Sample price</Text></View><Pressable accessibilityRole="button" accessibilityLabel={`View ${pro.name}’s profile for ${memberId}`} onPress={openProfile} style={({ pressed }) => [styles.profileButton, pressed && styles.pressed]}><Text variant="subhead" color="#FFFFFF">View profile</Text><Feather name="arrow-right" size={17} color="#FFFFFF" /></Pressable></View>
+    </View>
   );
 }
+
+function FilterRow({ title, detail, children }: { title: string; detail?: string; children: ReactNode }) {
+  return <View style={styles.filterRow}><View style={styles.filterLabel}><Text variant="overline" color={colors.textSecondary}>{title.toUpperCase()}</Text>{detail ? <Text variant="caption" color={colors.textSecondary}>{detail}</Text> : null}</View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>{children}</ScrollView></View>;
+}
+
+function FilterChip({ title, selected, icon, onPress }: { title: string; selected: boolean; icon?: FeatherIconName; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ selected }} onPress={onPress} style={[styles.chip, selected && styles.chipSelected]}>{icon ? <Feather name={icon} size={16} color={selected ? '#FFFFFF' : colors.textSecondary} /> : null}<Text variant="subhead" color={selected ? '#FFFFFF' : colors.textPrimary}>{title}</Text></Pressable>;
+}
+
+/** Match country and physical service area before exposing a profile to book. */
+
+
 const styles = StyleSheet.create({
-  header: { marginTop: spacing.sm },
-  matchButton: { marginTop: spacing.lg },
-  search: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    height: 52,
-    backgroundColor: colors.surface,
-    borderRadius: radius.input,
-    ...shadows.sm,
-  },
-  searchInput: { flex: 1, fontSize: 16, color: colors.textPrimary },
-  categoriesWrap: { marginTop: spacing.lg, marginHorizontal: -spacing.xl },
-  categories: { gap: spacing.sm, paddingHorizontal: spacing.xl },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    minHeight: 44,
-  },
-  chipActive: { backgroundColor: colors.textPrimary },
-  section: { marginTop: spacing.xxxl, gap: spacing.lg },
-  list: { gap: spacing.lg },
-  proTop: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
-  proTitle: { flex: 1, gap: 1 },
-  blurb: { marginTop: spacing.lg },
-  proMeta: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  horizontal: { gap: spacing.md },
-  booking: { width: 230, gap: spacing.sm },
-  bookingPerson: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  sheetGap: { gap: spacing.md },
-  choiceRow: { gap: spacing.sm },
-  choice: {
-    minHeight: 44,
-    justifyContent: "center",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.pill,
-  },
-  choiceActive: { backgroundColor: colors.textPrimary },
-  matchInput: {
-    minHeight: 110,
-    textAlignVertical: "top",
-    padding: spacing.lg,
-    borderRadius: radius.input,
-    backgroundColor: colors.surfaceMuted,
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
+  page: { gap: 22 },
+  flex: { flex: 1, minWidth: 0 },
+  appointments: { backgroundColor: colors.blueTint, borderRadius: 21, padding: 15, minHeight: 84, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  appointmentIcon: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderRadius: 14 },
+  search: { minHeight: 60, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 19, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 15 },
+  searchInput: { flex: 1, minWidth: 0, minHeight: 58, fontSize: 16, color: colors.textPrimary },
+  clear: { width: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', marginRight: -10 },
+  filterGroup: { gap: 17 },
+  filterRow: { gap: 8 },
+  filterLabel: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  filterScroll: { gap: 8, paddingRight: 5 },
+  chip: { minHeight: 48, paddingHorizontal: 17, paddingVertical: 9, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 7 },
+  chipSelected: { backgroundColor: sage, borderColor: sage },
+  utilityRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  utilityAction: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 48 },
+  demoNotice: { flexDirection: 'row', alignItems: 'center', gap: 9, padding: 13, backgroundColor: colors.surfaceMuted, borderRadius: 14 },
+  results: { gap: 16 },
+  resultsHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  provider: { padding: 18, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 0, borderColor: colors.border, gap: 13 },
+  providerTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  providerIdentity: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 62 },
+  saveButton: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surfaceMuted },
+  savedButton: { backgroundColor: colors.blueTint },
+  providerDetails: { gap: 6 },
+  detail: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7 },
+  modeTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  modeTag: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.blueTint, paddingVertical: 6, paddingHorizontal: 9, borderRadius: 9 },
+  providerFooter: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 14, marginTop: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' },
+  profileButton: { backgroundColor: sage, borderRadius: 24, paddingHorizontal: 17, minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  empty: { backgroundColor: colors.surface, borderRadius: 24, padding: 23, gap: 15, alignItems: 'center' },
+  emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.blueTint, alignItems: 'center', justifyContent: 'center' },
+  pressed: { opacity: 0.7 },
 });

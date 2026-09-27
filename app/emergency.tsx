@@ -47,7 +47,7 @@ export default function EmergencyScreen() {
           <View style={styles.flex}>
             <Text variant="headline">Emergency services</Text>
             <Text variant="footnote" color={colors.textSecondary}>
-              Call 000 in Australia or 112 in India. Circle is not an emergency service.
+              For emergency help in India, call 112. Circle is not an emergency service.
             </Text>
           </View>
         </View>

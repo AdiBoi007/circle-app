@@ -2,117 +2,62 @@ import { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-
 import { Avatar } from '@/components/Avatar';
-import { Card } from '@/components/Card';
 import { Sheet } from '@/components/Sheet';
-import { Text as CircleText, type TextProps } from '@/components/Text';
-import { PersonalText } from '@/accounts/savita/PersonalText';
+import { Text } from '@/components/Text';
 import { useAppState } from '@/state';
 import { colors, radius, spacing } from '@/theme';
 import type { DemoAccountId } from '@/types';
 
-const accounts = [
-  {
-    id: 'arjun' as const,
-    name: 'Arjun Mehra',
-    role: 'Family Organiser',
-    description: 'Manage health and care for your family.',
-    accent: 'blue' as const,
-  },
-  {
-    id: 'savita' as const,
-    name: 'Savita Mehra',
-    role: 'Personal Account',
-    description: 'View and manage your own health.',
-    accent: 'plum' as const,
-  },
-];
+export const demoAccounts = [
+  { id: 'arjun', name: 'Arjun Mehra', shortName: 'Arjun', role: 'Family organiser', description: 'One clear view of everyone you care for.', accent: 'blue' },
+  { id: 'savita', name: 'Savita Mehra', shortName: 'Savita', role: 'Simple view', description: 'Your day, your medicines, and a little help.', accent: 'plum' },
+  { id: 'riya', name: 'Riya Shah', shortName: 'Riya', role: 'Personal health', description: 'Your habits, health and people who can help.', accent: 'sage' },
+  { id: 'practitioner', name: 'Arvind Nair', shortName: 'Arvind', role: 'Practitioner', description: 'Your practice, availability and appointment requests.', accent: 'blue' },
+] as const;
 
-export function AccountSection() {
-  const { activeAccountId, setActiveAccountId } = useAppState();
+export function AccountSection({ compact = false }: { compact?: boolean }) {
+  const { activeAccountId, setActiveAccountId, practice } = useAppState();
   const [open, setOpen] = useState(false);
+  const accounts = demoAccounts.map((account) => account.id === 'practitioner' ? { ...account, name: practice.profile.name, shortName: practice.profile.name.split(' ')[0] } : account);
   const active = accounts.find((account) => account.id === activeAccountId)!;
-
+  const navigate = (href: '/settings' | '/onboarding') => { setOpen(false); router.push(activeAccountId === 'practitioner' && href === '/settings' ? '/practice/profile' : href); };
   const switchAccount = (id: DemoAccountId) => {
     setOpen(false);
     setActiveAccountId(id);
-    if (router.canDismiss()) router.dismissAll();
-    router.replace('/');
+    router.replace(id === 'practitioner' ? '/practice' : '/');
   };
-
-  return (
-    <View style={styles.section}>
-      <Text variant="overline" color={colors.textSecondary}>ACCOUNT</Text>
-      <Card padding={spacing.lg} elevation="sm" bordered>
-        <View style={styles.currentRow}>
-          <Avatar name={active.name} accent={active.accent} size={56} />
-          <View style={styles.copy}>
-            <Text variant="title3">{active.name}</Text>
-            <Text variant="callout" color={colors.textSecondary}>{active.role}</Text>
-          </View>
-        </View>
-        <View style={styles.divider} />
-        <Pressable
-          onPress={() => setOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Switch account"
-          accessibilityHint="Choose between Arjun and Savita"
-          style={({ pressed }) => [styles.switchRow, pressed && styles.pressed]}
-        >
-          <Feather name="repeat" size={21} color={colors.blue} />
-          <Text variant="headline" style={styles.copy}>Switch account</Text>
-          <Feather name="chevron-right" size={21} color={colors.textSecondary} />
-        </Pressable>
-      </Card>
-
-      <Sheet visible={open} onClose={() => setOpen(false)} title="Switch account">
-        <Text variant="body" color={colors.textSecondary} style={styles.supporting}>Choose how you want to use Circle.</Text>
-        <View style={styles.accounts}>
-          {accounts.map((account) => {
-            const selected = account.id === activeAccountId;
-            return (
-              <Pressable
-                key={account.id}
-                onPress={() => switchAccount(account.id)}
-                accessibilityRole="button"
-                accessibilityLabel={`${account.name}, ${account.role}`}
-                accessibilityHint={account.description}
-                accessibilityState={{ selected }}
-                style={({ pressed }) => [styles.accountCard, selected && styles.accountSelected, pressed && styles.pressed]}
-              >
-                <Avatar name={account.name} accent={account.accent} size={58} />
-                <View style={styles.copy}>
-                  <Text variant="title3">{account.name}</Text>
-                  <Text variant="headline" color={colors.textSecondary}>{account.role}</Text>
-                  <Text variant="callout" color={colors.textSecondary}>{account.description}</Text>
-                </View>
-                <Feather name={selected ? 'check-circle' : 'circle'} size={24} color={selected ? colors.blue : colors.textSecondary} />
-              </Pressable>
-            );
-          })}
-        </View>
-        <Text variant="footnote" color={colors.textSecondary} align="center" style={styles.note}>Demo account switching. Secure verification will be added before launch.</Text>
-      </Sheet>
-    </View>
-  );
-}
-
-function Text(props: TextProps) {
-  const { activeAccountId } = useAppState();
-  return activeAccountId === 'savita' ? <PersonalText {...props} /> : <CircleText {...props} />;
+  return <>
+    <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={`${active.name}, ${active.role}. Switch profile or open settings`} style={({ pressed }) => [styles.current, compact && styles.compact, pressed && styles.pressed]}>
+      {active.id === 'riya' ? <View style={styles.initials}><Text variant="headline" color={colors.sage}>RS</Text></View> : <Avatar name={active.name} accent={active.accent} size={compact ? 32 : 48} />}
+      <View style={[styles.copy, compact && styles.compactCopy]}><Text variant={compact ? 'footnote' : 'title3'} color={compact ? colors.blue : colors.textPrimary}>{compact ? active.shortName : active.name}</Text>{!compact && <Text color={colors.textSecondary} variant="callout">{active.role}</Text>}</View>
+      <Feather name="chevron-down" size={compact ? 12 : 18} color={compact ? colors.blue : colors.textSecondary} />
+    </Pressable>
+    <Sheet visible={open} onClose={() => setOpen(false)} title="Your Circle">
+      <Text color={colors.textSecondary} style={styles.intro}>Choose a client or practitioner demo.</Text>
+      <View style={styles.options}>
+        {accounts.map((account) => <Pressable key={account.id} accessibilityRole="button" accessibilityState={{ selected: account.id === activeAccountId }} accessibilityLabel={`${account.name}, ${account.role}`} onPress={() => switchAccount(account.id)} style={[styles.option, account.id === activeAccountId && styles.selected]}>
+          {account.id === 'riya' ? <View style={styles.initials}><Text variant="headline" color={colors.sage}>RS</Text></View> : <Avatar name={account.name} accent={account.accent} size={42} />}
+          <View style={styles.copy}><Text variant="headline">{account.name}</Text><Text variant="subhead" color={colors.textSecondary}>{account.role}</Text><Text variant="footnote" color={colors.textSecondary}>{account.description}</Text></View>
+          <Feather name={account.id === activeAccountId ? 'check-circle' : 'chevron-right'} size={20} color={colors.blue} />
+        </Pressable>)}
+      </View>
+      <Pressable onPress={() => navigate('/settings')} accessibilityRole="button" style={styles.link}><Feather name="settings" size={21} color={colors.textPrimary} /><Text variant="headline">Settings & preferences</Text></Pressable>
+      <Pressable onPress={() => navigate('/onboarding')} accessibilityRole="button" style={styles.link}><Feather name="compass" size={21} color={colors.textPrimary} /><Text variant="headline">Explore the two paths</Text></Pressable>
+      <Text variant="footnote" color={colors.textSecondary}>Interactive demo · sample profiles · changes reset when you reload.</Text>
+    </Sheet>
+  </>;
 }
 
 const styles = StyleSheet.create({
-  section: { gap: spacing.md },
-  currentRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  copy: { flex: 1, minWidth: 0, gap: spacing.xxs },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginVertical: spacing.md },
-  switchRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  supporting: { marginBottom: spacing.lg },
-  accounts: { gap: spacing.md },
-  accountCard: { minHeight: 116, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.card, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface },
-  accountSelected: { borderWidth: 2, borderColor: colors.blue, backgroundColor: colors.blueTint },
-  note: { marginTop: spacing.xl, lineHeight: 19 },
-  pressed: { opacity: 0.72 },
+  current: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', padding: spacing.md, backgroundColor: colors.surface, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border },
+  compact: { minHeight: 48, flexShrink: 0, paddingVertical: 0, paddingHorizontal: 0, borderWidth: 0, backgroundColor: 'transparent', gap: 3, borderRadius: radius.pill, alignSelf: 'center' },
+  copy: { flex: 1, minWidth: 0, gap: 3 },
+  compactCopy: { flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
+  initials: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.blueTint, alignItems: 'center', justifyContent: 'center' },
+  intro: { marginBottom: spacing.lg }, options: { gap: spacing.sm },
+  option: { minHeight: 94, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border },
+  selected: { backgroundColor: colors.blueTint, borderColor: colors.blue },
+  link: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
+  pressed: { opacity: 0.7 },
 });

@@ -60,7 +60,7 @@ export function Button({
       accessibilityHint={accessibilityHint}
       style={({ pressed }) => [
         styles.base,
-        { height: HEIGHT[size], backgroundColor: palette.bg },
+        { minHeight: HEIGHT[size], backgroundColor: palette.bg },
         variant === 'secondary' && styles.secondaryBorder,
         fullWidth && styles.fullWidth,
         pressed && !isDisabled && styles.pressed,
@@ -73,7 +73,7 @@ export function Button({
       ) : (
         <View style={styles.content}>
           {icon}
-          <Text variant="headline" color={palette.fg}>
+          <Text variant="headline" color={palette.fg} align="center" style={{ flexShrink: 1 }}>
             {title}
           </Text>
         </View>
@@ -84,7 +84,7 @@ export function Button({
 
 const VARIANTS: Record<Variant, { bg: string; fg: string }> = {
   primary: { bg: colors.blue, fg: colors.white },
-  secondary: { bg: colors.surfaceMuted, fg: colors.textPrimary },
+  secondary: { bg: colors.blueTint, fg: colors.blue },
   tertiary: { bg: 'transparent', fg: colors.blue },
 };
 
@@ -94,6 +94,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.md,
   },
   fullWidth: {
     alignSelf: 'stretch',
@@ -104,12 +105,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   secondaryBorder: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderWidth: 0,
   },
   pressed: {
     opacity: 0.88,
-    transform: [{ scale: 0.98 }],
   },
   disabled: {
     opacity: 0.45,

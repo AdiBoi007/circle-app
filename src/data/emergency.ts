@@ -16,9 +16,10 @@ const conditionsFor = (memberId: MemberId): string[] => {
 const allergiesFor = (memberId: MemberId): string[] =>
   family.find((item) => item.id === memberId)?.allergies ?? ['No known allergies'];
 
-const captain = { name: 'Arjun Mehra', relation: 'Care Captain · Son', phone: '+61 400 100 100', primary: true };
-const rajiv = { name: 'Rajiv Mehra', relation: 'Father', phone: '+91 98100 20020' };
-const neha = { name: 'Neha Mehra', relation: 'Mother', phone: '+91 98100 30030' };
+// Non-dialable placeholders for the Chandigarh demo; no real contact numbers.
+const captain = { name: 'Arjun Mehra', relation: 'Care Captain · Son', phone: '+91 XXXXX XXXX1', primary: true };
+const rajiv = { name: 'Rajiv Mehra', relation: 'Father', phone: '+91 XXXXX XXXX2' };
+const neha = { name: 'Neha Mehra', relation: 'Mother', phone: '+91 XXXXX XXXX3' };
 
 /** Apple-Health-style Medical ID cards. Local demo data only. */
 export const emergencyProfiles: Record<MemberId, EmergencyProfile> = {

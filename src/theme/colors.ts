@@ -1,7 +1,7 @@
 /**
  * Circle color tokens.
  *
- * A warm, calm, medically-trustworthy palette. Every accent carries a
+ * A warm off-white, grouped palette with clear semantic accents. Every accent carries a
  * semantic meaning and ships with a soft tint used for pill/label surfaces
  * so we never rely on the raw accent as a large fill.
  */
@@ -9,41 +9,41 @@
 export const palette = {
   // Neutrals
   background: '#F6F1E8',
-  surface: '#FFFDF8',
+  surface: '#FFFFFF',
   surfaceMuted: '#F1EADF',
-  textPrimary: '#171815',
-  // Muted text stays AA-compliant on Circle's warm surfaces.
-  textSecondary: '#62645D',
-  textTertiary: '#686A63',
+  textPrimary: '#1C1C1E',
+  // Muted text stays AA-compliant on Circle's light surfaces.
+  textSecondary: '#636366',
+  textTertiary: '#6C6C70',
   border: '#E8E1D6',
   borderStrong: '#DCD3C4',
 
   // Accents
   // Semantic colours meet AA on light surfaces and behind white labels.
-  blue: '#2463D4',
-  sage: '#356C50',
-  amber: '#855612',
-  plum: '#73578F',
-  red: '#B53E39',
+  blue: '#0066CC',
+  sage: '#248A3D',
+  amber: '#9C5700',
+  plum: '#8944AB',
+  red: '#C93445',
 
   // Soft accent tints (for pill backgrounds, subtle fills)
-  blueTint: '#E4EDFE',
-  sageTint: '#E6EFE9',
-  amberTint: '#F6ECDA',
-  plumTint: '#EEE9F2',
-  redTint: '#F8E5E3',
+  blueTint: '#E8F2FF',
+  sageTint: '#EAF6ED',
+  amberTint: '#FFF3DF',
+  plumTint: '#F3ECF8',
+  redTint: '#FFF0F2',
 
   // Fixed
   white: '#FFFFFF',
-  black: '#171815',
-  overlay: 'rgba(23, 24, 21, 0.35)',
-  scrim: 'rgba(23, 24, 21, 0.55)',
+  black: '#1C1C1E',
+  overlay: 'rgba(0, 0, 0, 0.24)',
+  scrim: 'rgba(0, 0, 0, 0.32)',
 
   // Dark surface used for the Circle AI composer (premium, focused)
-  ink: '#1F211C',
-  inkMuted: '#33352F',
-  onInk: '#F6F1E8',
-  onInkMuted: '#A7A99F',
+  ink: '#1C1C1E',
+  inkMuted: '#3A3A3C',
+  onInk: '#FFFDF8',
+  onInkMuted: '#D1D1D6',
 } as const;
 
 /** Semantic accent groupings: a strong color + its soft tint + on-color text. */
@@ -70,27 +70,27 @@ export type AccentName = keyof typeof accents;
  */
 export const pastels = {
   lavender: {
-    gradient: ['#ECE7F6', '#E1DAF0'] as const,
+    gradient: ['#F5F0FA', '#EDE5F5'] as const,
     chip: 'rgba(255, 255, 255, 0.62)',
     line: '#9D8FBE',
   },
   blue: {
-    gradient: ['#E3EDF9', '#D4E2F4'] as const,
+    gradient: ['#EEF5FF', '#E3EFFF'] as const,
     chip: 'rgba(255, 255, 255, 0.62)',
     line: '#8FA9CF',
   },
   mint: {
-    gradient: ['#E3EFE8', '#D5E7DB'] as const,
+    gradient: ['#EEF8F0', '#E3F2E7'] as const,
     chip: 'rgba(255, 255, 255, 0.62)',
     line: '#93BBA1',
   },
   peach: {
-    gradient: ['#F7E9DB', '#F2DECB'] as const,
+    gradient: ['#FFF4EA', '#FFEADA'] as const,
     chip: 'rgba(255, 255, 255, 0.6)',
     line: '#D0A583',
   },
   cream: {
-    gradient: ['#FFFDF8', '#F6F0E6'] as const,
+    gradient: ['#FFFFFF', '#F6F1E8'] as const,
     chip: 'rgba(255, 255, 255, 0.7)',
     line: '#C7BFB1',
   },

@@ -56,7 +56,7 @@ export const typography = {
   title2: {
     fontSize: 22,
     lineHeight: 28,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     letterSpacing: -0.4,
     fontFamily: systemFontMedium,
   },
@@ -76,7 +76,7 @@ export const typography = {
   },
   body: {
     fontSize: 17,
-    lineHeight: 24,
+    lineHeight: 23,
     fontWeight: fontWeight.regular,
     letterSpacing: -0.2,
     fontFamily: systemFont,

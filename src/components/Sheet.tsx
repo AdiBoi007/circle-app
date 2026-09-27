@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Text';
@@ -31,7 +32,7 @@ export function Sheet({ visible, onClose, title, children, footer }: Props) {
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View style={styles.root}>
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : Platform.OS === 'android' ? 'height' : undefined}>
         <Pressable
           style={styles.scrim}
           onPress={onClose}
@@ -45,15 +46,14 @@ export function Sheet({ visible, onClose, title, children, footer }: Props) {
           ]}
         >
           <View style={styles.handle} />
-          {title ? (
-            <Text variant="title3" style={styles.title}>
-              {title}
-            </Text>
-          ) : null}
-          {children}
+          <View style={styles.heading}>
+            <Text variant="title3" style={styles.title}>{title}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close dialog" onPress={onClose} style={styles.close}><Feather name="x" size={23} color={colors.textPrimary} /></Pressable>
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.sm }}>{children}</ScrollView>
           {footer ? <View style={styles.footer}>{footer}</View> : null}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -72,6 +72,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.scrim,
   },
   sheet: {
+    maxHeight: '90%',
+    width: '100%',
+    maxWidth: 760,
+    alignSelf: 'center',
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.cardLarge,
     borderTopRightRadius: radius.cardLarge,
@@ -88,8 +92,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   title: {
-    marginBottom: spacing.md,
+    flex: 1,
   },
+  heading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  close: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   footer: {
     marginTop: spacing.xl,
   },
