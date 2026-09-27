@@ -6,7 +6,7 @@ import type {
   LiveBooking,
   LivePractice,
   LiveService,
-} from "../../src/live/types.js";
+} from "./contracts.js";
 import { pool, transaction } from "./db.js";
 import {
   audit,

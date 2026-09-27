@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import type {
   LiveBootstrap,
   LiveInvitationPreview,
-} from "../../src/live/types.js";
+} from "../src/contracts.js";
 
 const envFile = fileURLToPath(new URL("../.env", import.meta.url));
 if (existsSync(envFile)) process.loadEnvFile(envFile);

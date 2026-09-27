@@ -55,7 +55,14 @@ jobs:
           cache-dependency-path: server/package-lock.json
 
       - name: Generate an ephemeral test auth key
-        run: node -e "process.stdout.write('AUTH_SECRET=' + require('node:crypto').randomBytes(32).toString('hex') + '\n')" >> "$GITHUB_ENV"
+        run: |
+          node <<'NODE'
+          const { randomBytes } = require('node:crypto');
+          const { appendFileSync } = require('node:fs');
+          const secret = randomBytes(32).toString('hex');
+          console.log(`::add-mask::${secret}`);
+          appendFileSync(process.env.GITHUB_ENV, `AUTH_SECRET=${secret}\n`);
+          NODE
 
       - name: Install locked API dependencies
         run: npm ci
